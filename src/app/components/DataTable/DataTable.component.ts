@@ -13,35 +13,66 @@ export class DataTableComponent implements OnInit, AfterViewInit {
   @Input() data: any;
   @Input() columns: any;
   @Input() options: any;
+  @Input() editHandler: Function;
+  @Input() deleteHandler: Function;
   public rowData: any[];
   dataTable: any;
 
-  constructor() {
-    
-  }
-
   ngAfterViewInit() {
-    this.dataTable = $(this.table.nativeElement);
-    this.dataTable.DataTable();
-  }
-
-  edit(id) {
-    console.log("Edit: ", id)
-  }
-
-  ngOnInit(): void {
-    console.log("ONINIT")
+    const that = this;
     this.rowData = this.data && this.data.map(datum => {
       let t = [];
+      let id;
       for(let d in datum) {
         if(true) {
+          if(d === 'id') {
+            id = datum[d];
+          }
           t.push(datum[d]);
         }
       }
+      let actions = ``;
+      if(this.options.actions.edit.enable) {
+        actions += `<i data-id="${id}" class="fa fa-edit edit-dt action-item"></i>`;
+      }
+      if(this.options.actions.delete.enable) {
+        actions += `<i data-id="${id}" class="fa fa-trash delete-dt action-item"></i>`;
+      }
+      t.push(actions);
       return t;
     });
-    console.log("ROW DATA: ", this.rowData);
-    // this.dataTable = $(this.table.nativeElement);
-    // this.dataTable.dataTable();
+
+    this.dataTable = $(this.table.nativeElement);
+    this.dataTable.DataTable({
+      columns: this.columns,
+      data: this.rowData
+    });
+
+    this.addEventListeners()
+
+    this.dataTable.on('draw.dt', function(e, settings, len) {
+      that.addEventListeners()
+    })
+  }
+
+  addEventListeners() {
+    document.querySelectorAll('.edit-dt').forEach(doc => doc.addEventListener('click', (e)=> this.edit(e)))
+    document.querySelectorAll('.delete-dt').forEach(doc => doc.addEventListener('click', (e)=> this.delete(e)))
+  }
+
+  edit(e) {
+    this.editHandler(e.target.getAttribute('data-id'));
+  }
+
+  delete(e) {
+    this.deleteHandler(e.target.getAttribute('data-id'));
+  }
+
+  ngOnInit(): void {
+
+  }
+
+  constructor() {
+
   }
 }
